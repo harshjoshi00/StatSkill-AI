@@ -34,38 +34,52 @@ export default function DashboardPage() {
 
   const [activeSection, setActiveSection] = useState<NavSection>("dashboard");
   const [selectedDomain, setSelectedDomain] = useState<string>("National Accounts (PLFS, ASI, CPI, etc.)");
-  const [loadingData, setLoadingData] = useState(true);
+  const [loadingData, setLoadingData] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [actionProcessing, setActionProcessing] = useState<string | null>(null);
   const [recFilter, setRecFilter] = useState<string>("ALL");
 
-  // Data States
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [training, setTraining] = useState<TrainingHistory[]>([]);
-  const [competency, setCompetency] = useState<CompetencyOverview | null>(null);
-  const [summary, setSummary] = useState<CompetencySummary | null>(null);
-  const [recommendations, setRecommendations] = useState<RecommendationItem[]>([]);
-  const [materials, setMaterials] = useState<LearningMaterial[]>([]);
-  const [assessmentProgress, setAssessmentProgress] = useState<AssessmentProgressResponse | null>(null);
-  const [assessmentHistory, setAssessmentHistory] = useState<AssessmentHistoryResponse | null>(null);
-  const [competencyProgress, setCompetencyProgress] = useState<CompetencyProgressResponse | null>(null);
+  // Data States initialized with rich MOSPI demo data for instant dashboard render
+  const [profile, setProfile] = useState<Profile | null>(DEMO_PROFILE);
+  const [training, setTraining] = useState<TrainingHistory[]>(DEMO_TRAINING_HISTORY);
+  const [competency, setCompetency] = useState<CompetencyOverview | null>(DEMO_COMPETENCY);
+  const [summary, setSummary] = useState<CompetencySummary | null>(DEMO_SUMMARY);
+  const [recommendations, setRecommendations] = useState<RecommendationItem[]>(DEMO_RECOMMENDATIONS);
+  const [materials, setMaterials] = useState<LearningMaterial[]>(DEMO_MATERIALS);
+  const [assessmentProgress, setAssessmentProgress] = useState<AssessmentProgressResponse | null>(DEMO_PROGRESS);
+  const [assessmentHistory, setAssessmentHistory] = useState<AssessmentHistoryResponse | null>(DEMO_ASSESSMENT_HISTORY);
+  const [competencyProgress, setCompetencyProgress] = useState<CompetencyProgressResponse | null>(DEMO_COMPETENCY_PROGRESS);
 
-  // Auth Guard
+  // Auth Guard: Load demo data immediately if unauthenticated so dashboard displays right away
   useEffect(() => {
     if (!isLoading) {
       if (!isAuthenticated) {
-        router.push("/login");
+        loadData();
         return;
       }
       if (user?.role === "ADMIN") {
         router.push("/admin");
         return;
       }
+      loadData();
     }
   }, [isLoading, isAuthenticated, user, router]);
 
   const loadData = useCallback(async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) {
+      setProfile(DEMO_PROFILE);
+      setTraining(DEMO_TRAINING_HISTORY);
+      setCompetency(DEMO_COMPETENCY);
+      setSummary(DEMO_SUMMARY);
+      setRecommendations(DEMO_RECOMMENDATIONS);
+      setMaterials(DEMO_MATERIALS);
+      setAssessmentProgress(DEMO_PROGRESS);
+      setAssessmentHistory(DEMO_ASSESSMENT_HISTORY);
+      setCompetencyProgress(DEMO_COMPETENCY_PROGRESS);
+      setLoadingData(false);
+      setRefreshing(false);
+      return;
+    }
 
     const priorityParam = recFilter === "HIGH_PRIORITY" ? "HIGH_PRIORITY" : undefined;
     const diffParam = ["BEGINNER", "INTERMEDIATE", "ADVANCED", "EXPERT"].includes(recFilter) ? recFilter : undefined;
@@ -300,7 +314,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (isLoading || loadingData) {
+  if (loadingData && !profile) {
     return (
       <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090d16] flex flex-col items-center justify-center gap-3 font-sans">
         <Loader2 className="w-8 h-8 text-slate-800 dark:text-slate-200 animate-spin" />
